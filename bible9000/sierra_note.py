@@ -3,8 +3,8 @@
 '''
 File: sierra_note.py
 Problem Domain: Database / DAO
-Status: PRODUCTION / STABLE
-Revision: 1.7.5
+Status: Testing
+Revision: 2.0.0
 '''
 
 import sys
@@ -16,9 +16,9 @@ from bible9000.tui import BasicTui
 from bible9000.sierra_dao import SierraDAO
 from bible9000.words import WordList
 
-class NoteDAO():
+class NoteDAO:
     ''' Manage the NoteDAOs Table '''
-    def __init__(self, row=None):
+    def __init__(self, row=None): # no kwargs, please
         ''' Instance an empty, else populate from a list or tuple. '''
         self.ID     = 0
         self.vStart = 0
@@ -62,7 +62,7 @@ class NoteDAO():
         return False
 
     @staticmethod
-    def Repr(rstr):
+    def Repr(rstr, **kwargs):
         ''' Return an instance from a string or a dict
             tagged by repr(), else None. '''
         obj = rstr
@@ -247,22 +247,22 @@ WHERE Subject <> "" ORDER BY vStart;'
             BasicTui.DisplayError(ex)
         return sorted(list(results),reverse=False)
 
-    def subject_update(self, row)->bool:
+    def subject_update(self, row, **kwargs)->bool:
         ''' Beware the recursion. '''
-        cursor = NoteDAO.GetDAO()
+        cursor = NoteDAO.GetDAO(**kwargs)
         cmd = f'UPDATE SqlNotes SET Subject = "{row._Subject}" \
 where ID = {row.ID};'
         cursor.dao.conn.execute(cmd)
         cursor.dao.conn.connection.commit()
         return True
 
-    def subject_rename(self, name_from, name_to)->bool:
+    def subject_rename(self, name_from, name_to, **kwargs)->bool:
         ''' Rename a subject. '''
         if not name_from or not name_to:
             return False
         cmd = f'SELECT * FROM SqlNotes WHERE Subject GLOB "*{name_from}*";'
         try:
-            cursor = NoteDAO.GetDAO()
+            cursor = NoteDAO.GetDAO(**kwargs)
             res = self.dao.conn.execute(cmd)
             for a in res:
                 row = NoteDAO(a)
@@ -279,14 +279,14 @@ where ID = {row.ID};'
             return False
         return True
 
-    def subject_delete(self, subject)->bool:
+    def subject_delete(self, subject, **kwargs)->bool:
         ''' Remove a subject. '''
         if not subject:
             return False
         cmd = f'SELECT * FROM SqlNotes WHERE Subject GLOB "*{subject}*";'
         try:
             to_del = list()
-            cursor = NoteDAO.GetDAO()
+            cursor = NoteDAO.GetDAO(**kwargs)
             res = self.dao.conn.execute(cmd)
             for a in res:
                 row = NoteDAO(a)
@@ -309,23 +309,20 @@ where ID = {row.ID};'
         return True
     
     @staticmethod
-    def GetDAO(bSaints=False, database=None):
+    def GetDAO(**kwargs):
         ''' Connect to the database & return the DAO '''
-        if not database:
-            from bible9000.admin_ops import get_database
-            database = get_database()
         result = NoteDAO()
-        result.dao = SierraDAO.GetDAO(bSaints, database)
+        result.dao = SierraDAO.GetDAO(**kwargs)
         return result
 
     @staticmethod
-    def GetSubjects():
+    def GetSubjects(**kwargs):
         ''' Get all Subjects into a sorted list - can be empty. '''
-        rdao = NoteDAO.GetDAO(True)
+        rdao = NoteDAO.GetDAO(**kwargs)
         return rdao.get_subjects_list()
 
 
 if __name__ == '__main__':
     from tests import test_notes
-    test_notes()
+    test_notes(db='./~TestNotes.sqlt3')
 

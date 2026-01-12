@@ -3,7 +3,7 @@
 '''
 File: sierra_dao.py
 Problem Domain: Database / DAO
-Status: PRODUCTION / STABLE
+Status: Testing
 Revision: 2.0.0
 '''
 import sys
@@ -17,9 +17,9 @@ class SierraDAO:
     ''' Extract a nominal PROBLEM DOMAIN dictionary,
         from the database. Partial S3D2 pattern.'''
     
-    def __init__(self, cursor, bSaints=False):
+    def __init__(self, cursor, **kwargs):
         self.conn = cursor
-        self.bSaints = bSaints
+        self.params = kwargs
         self.sql_sel = "SELECT Verse, Book, BookChapterID, BookVerseID, V.ID, BookID \
 FROM SqlTblVerse AS V JOIN SqlBooks as B WHERE (B.ID=BookID) AND {zmatch} ORDER BY V.ID;"
 
@@ -68,9 +68,6 @@ WHERE (B.ID=BookID) AND BOOK LIKE '%{book}%' AND BookChapterID='{chapt}' AND Boo
                 response['book'] = zrow[0]
                 if zrow[0].find('.') != -1:
                     cols = zrow[0].split('.')
-                    if self.bSaints == False and cols[1] != 'nt' and cols[1] != 'ot':
-                        zrow = res.fetchone()
-                        continue
                     response['book'] = cols[2]
                 yield response
                 zrow = res.fetchone()
@@ -90,9 +87,6 @@ WHERE (B.ID=BookID) AND BOOK LIKE '%{book}%' AND BookChapterID='{chapt}' AND Boo
                 response['book'] = zrow[1]
                 if zrow[1].find('.') != -1:
                     cols = zrow[1].split('.')
-                    if self.bSaints == False and cols[1] != 'nt' and cols[1] != 'ot':
-                        zrow = res.fetchone()
-                        continue
                     response['book'] = cols[2]
                 response['chapter'] = zrow[2]
                 response['verse'] = zrow[3]
@@ -104,14 +98,18 @@ WHERE (B.ID=BookID) AND BOOK LIKE '%{book}%' AND BookChapterID='{chapt}' AND Boo
         return None
 
     @staticmethod
-    def GetNotes(sierra:int):
+    def GetNotes(sierra:int, **kwargs):
         ''' get notes for verse '''
         from bible9000.sierra_note import NoteDAO
-        dao = NoteDAO.GetDAO(True)
+        dao = NoteDAO.GetDAO(**kwargs)
         return dao.note_for(sierra)
    
     @staticmethod
-    def GetDAO(bSaints=False, database=None):
+    def GetDAO(**kwargs):
+        ''' New: Override via a 'db' parameter, as available! '''
+        database = None
+        if 'db' in kwargs:
+            database = kwargs['db']
         ''' Connect to the database & return the DAO '''
         if not database:
             from bible9000.admin_ops import get_database
@@ -119,15 +117,16 @@ WHERE (B.ID=BookID) AND BOOK LIKE '%{book}%' AND BookChapterID='{chapt}' AND Boo
         conn = sqlite3.connect(database)
         # conn.row_factory = dict_factory
         curs = conn.cursor()
-        dao = SierraDAO(curs, bSaints)
+        dao = SierraDAO(curs)
         dao.database = database
+        dao._conn = conn # NEW
         return dao
 
     @staticmethod
-    def GetTestaments()->dict():
+    def GetTestaments(**kwargs)->dict():
         ''' Get the book names in the 'nt' 'ot' and 'bom'. '''
         results = dict()
-        dao = SierraDAO.GetDAO(True)
+        dao = SierraDAO.GetDAO(**kwargs)
         if not dao:
             return results
         cmd = 'SELECT Book From SqlBooks ORDER BY ID;'
@@ -141,10 +140,10 @@ WHERE (B.ID=BookID) AND BOOK LIKE '%{book}%' AND BookChapterID='{chapt}' AND Boo
         return results
     
     @staticmethod
-    def ListBooks(bSaints=False) -> list():
-        ''' Get the major books. Emply list on error. '''
+    def ListBooks(**kwargs) -> list():
+        ''' Get the major books. Empty list on error. '''
         results = list()
-        dao = SierraDAO.GetDAO(bSaints)
+        dao = SierraDAO.GetDAO(**kwargs)
         if not dao:
             return results
         books = dao.search_books()
@@ -152,13 +151,14 @@ WHERE (B.ID=BookID) AND BOOK LIKE '%{book}%' AND BookChapterID='{chapt}' AND Boo
             return results
         return books
 
+
     @staticmethod
-    def GetBookRange(book_id:int, bSaints=True)->tuple:
+    def GetBookRange(book_id:int, **kwargs)->tuple:
         ''' Get the minimum and maximum sierra
             number for the book #, else None
         '''
         try:
-            dao = SierraDAO.GetDAO(bSaints)
+            dao = SierraDAO.GetDAO(**kwargs)
             cmd = f'select min(id), max(id) from SqlTblVerse where BookID = {book_id};'
             result = dao.conn.execute(cmd)
             return tuple(result.fetchone())

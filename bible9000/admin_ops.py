@@ -16,18 +16,18 @@ tables = {
     }
 
 
-def do_export_user_data(prefix=None)->str:
+def do_export_user_data(prefix=None, **kwargs)->str:
     ''' Export user's NOTES and FAV's. File name returned. '''
     fname = time.strftime("%Y%m%d-%H%M%S") + '.sbbk'
     if prefix:
         fname = prefix + fname
     count = 0
     with open(fname, 'w') as fh:
-        dao = NoteDAO.GetDAO(True)
+        dao = NoteDAO.GetDAO(**kwargs)
         for row in dao.get_all():
             print(repr(row), file=fh)
             count += 1
-        dao = FavDAO.GetDAO(True)
+        dao = FavDAO.GetDAO(**kwargs)
         for row in dao.get_favs():
             print(repr(row), file=fh)
             count += 1
@@ -35,20 +35,20 @@ def do_export_user_data(prefix=None)->str:
     return fname
 
 
-def do_import_user_data()->bool:
+def do_import_user_data(**kwargs)->bool:
     ''' Import user's NOTES and FAV's '''
     files = []
     for filename in os.listdir('.'):
         if filename.endswith(".sbbk"):
             files.append(filename)
     for ss, file in enumerate(files,1):
-        print(f'{ss}.) {file}')
+        BasicTui.Display(f'{ss}.) {file}')
     inum = BasicTui.InputNumber('Restore #> ') -1
     if inum < 0 or inum >= len(files):
         return False
     with open(files[inum]) as fh:
-        ndao = NoteDAO.GetDAO(True)
-        fdao = FavDAO.GetDAO(True)
+        ndao = NoteDAO.GetDAO(**kwargs)
+        fdao = FavDAO.GetDAO(**kwargs)
         for ss, _str in enumerate(fh, 1):
             obj = NoteDAO.Repr(_str)
             if obj:
@@ -71,7 +71,7 @@ def do_rename_user_export()->bool:
         if filename.endswith(".sbbk"):
             files.append(filename)
     for ss, file in enumerate(files,1):
-        print(f'{ss}.) {file}')
+        BasicTui.Display(f'{ss}.) {file}')
     inum = BasicTui.InputNumber('Rename #> ') -1
     if inum < 0 or inum >= len(files):
         return False
@@ -98,40 +98,41 @@ def get_database():
     return os.path.join(pdir, 'biblia.sqlt3')
 
 
-def destory_notes_and_fav():
+def destory_notes_and_fav(**kwargs):
     ''' Handy when cleaning-up after r&d (etc.) '''
-    dao = SierraDAO.GetDAO()
+    dao = SierraDAO.GetDAO(**kwargs)
     for key in 'SqlNotes', 'SqlFav':
         dao.conn.execute(f'DROP TABLE IF EXISTS {key};')
         dao.conn.execute(tables[key])
     dao.conn.connection.commit()
 
 
-def cleanup():
+def cleanup(**kwargs):
     ''' Tightent-up / vacuum the database. '''
-    dao = SierraDAO.GetDAO()
+    dao = SierraDAO.GetDAO(**kwargs)
     dao.conn.execute('vacuum')
     dao.conn.connection.commit()
 
 
-def create_tables():
+def create_tables(**kwargs):
     ''' Create requesite tables iff they do not already exist. '''
-    dao = SierraDAO.GetDAO()
+    global tables
+    dao = SierraDAO.GetDAO(**kwargs)
     for key in tables:
         dao.conn.execute(tables[key])
     dao.conn.connection.commit()
 
     
-def destroy_notes():
+def destroy_notes(**kwargs):
     ''' Re-create the SqlNotes Table from scratch. Will destroy SqlNotes!'''
     key = 'SqlNotes'
-    dao = SierraDAO.GetDAO()
+    dao = SierraDAO.GetDAO(**kwargs)
     dao.conn.execute(f'DROP TABLE IF EXISTS {key};')
     dao.conn.execute(tables[key])
     dao.conn.connection.commit()
     
 
-def destroy_everything():
+def destroy_everything(**kwargs):
     ''' Re-create the database from scratch. Will destroy SqlNotes!'''
     import os.path
     ''' My thing - not to worry. '''
@@ -139,7 +140,7 @@ def destroy_everything():
     if not os.path.exists(zfile):
         return
 
-    dao = SierraDAO.GetDAO()
+    dao = SierraDAO.GetDAO(**kwargs)
     for key in tables:
         dao.conn.execute(f'DROP TABLE IF EXISTS {key};')
         dao.conn.execute(tables[key])
@@ -164,9 +165,9 @@ def destroy_everything():
             zd['verse'] = zd['verse'][2:].split(':')
             lines.append(zd)
                 
-    print(len(lines), len(books))
+    BasicTui.Display(len(lines), len(books))
     for ss, b in enumerate(books, 1):
-        print(ss,books[b])
+        BasicTui.Display(ss,books[b])
         cmd = f'insert into SqlBooks (Book) VALUES ("{books[b]}");'
         dao.conn.execute(cmd)
     for line in lines:
@@ -178,17 +179,17 @@ def destroy_everything():
     dao.conn.connection.commit()
 
 
-def consolidate_notes():
+def consolidate_notes(**kwargs):
     from bible9000.sierra_note import NoteDAO
     from bible9000.words import WordList
-    dao = NoteDAO.GetDAO(True)
+    dao = NoteDAO.GetDAO(**kwargs)
     notes = dict()
     for note in dao.get_notes():
         if not note.Sierra in notes:
             notes[note.Sierra] = []
         notes[note.Sierra].append(note)
     for sierra in notes:
-        mega = NoteDAO()
+        mega = NoteDAO(**kwargs)
         if len(notes[sierra]) > 1:
             # Got dups.
             sigma = set(); maga = set()
@@ -210,18 +211,18 @@ def consolidate_notes():
     return True
 
 
-def do_user_db_reset()->bool:
+def do_user_db_reset(**kwargs)->bool:
     ''' Remove all user data. a bakcup_* file is created.'''
     opt = BasicTui.InputYesNo('Remove custom content? y/N > ')
     if not opt or opt[0] != 'y':
         BasicTui.Display('Nothing removed.')
         return False
-    fname = do_export_user_data('backup_')
+    fname = do_export_user_data('backup_', **kwargs)
     if not fname:
         BasicTui.DisplayError(f'Unable to backup to {fname}.')
         BasicTui.Display('Nothing removed.')
         return False
-    dao = SierraDAO.GetDAO()
+    dao = SierraDAO.GetDAO(**kwargs)
     for key in ('SqlNotes', 'SqlFav'):
         dao.conn.execute(f'DROP TABLE IF EXISTS {key};')
         dao.conn.execute(tables[key])
@@ -255,7 +256,7 @@ favorites, and subjects.')
     BasicTui.Display('~~~~~')
 
 
-def do_admin_ops():
+def do_admin_ops(**kwargs):
     from bible9000.main import do_func, dum
     ''' What users can do. '''
     options = [
@@ -266,11 +267,11 @@ def do_admin_ops():
         ("?", "Help", do_user_admin_help),
         ("q", "Quit", dum)
     ]
-    do_func("Administration: ", options, '>> Admin Menu')        
+    do_func("Administration: ", options, '>> Admin Menu', **kwargs)        
 
 
 if __name__ == '__main__':
 ##    if consolidate_notes() == True:
-##        print("Consolidated.")
-    do_admin_ops()
+##        BasicTui.Display("Consolidated.")
+    do_admin_ops() # default db ok!
 

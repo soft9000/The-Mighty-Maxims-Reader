@@ -18,7 +18,7 @@ from bible9000.user_selects  import UserSelects
 from bible9000.sierra_note   import NoteDAO
 
 
-HEADER = """<html>
+HEADER_BIBLIA = """<html>
 <head>
 <meta charset="UTF-8">
 <style>
@@ -33,9 +33,9 @@ body {
 
 <table width=450><tr><td>
 <hr>
-<center><i>1st Edition - 2025/10/01</i></center>
+<center><i>2nd Edition - 2026/01/12</i></center>
 <hr>
-<p>Welcome to the <b>"The Stick of Joseph"</b>!</p>
+<p>Welcome to <b>"The Stick of Joseph"</b>!</p>
 
 <h3>Introduction</h3>
 <p>Look around the planet - no one can lay any creditable 
@@ -65,6 +65,43 @@ The link will work in every 'online' galaxy... and
 <a href="https://MightyMaxims.com">Website</a><br>
 <a href="https://ko-fi.com/doctorquote">Community</a><br>
 <a href="https://github.com/DoctorQuote/The-Stick-of-Joseph">Project</a>
+</p>
+</td></tr></table>
+"""
+
+HEADER_COMMON = """<html>
+<head>
+<meta charset="UTF-8">
+<style>
+body {
+    font-size: 18px;
+}
+</style>
+</head>
+<body>
+<h2>Mighty Maxims</h2>
+<b><i>Note Sharing System</i></b>
+
+<table width=450><tr><td>
+<hr>
+<center><i>1st Edition - 2026/01/12</i></center>
+<hr>
+<p>Welcome to the <b>"Bible9000" Project</b>!</p>
+
+<h3>Introduction</h3>
+<p>The Mighty Maxims project is about sourcing &amp; sharing inspirations.</p>
+
+<h3>&#127760; The Sharing Globe</h3>
+<p>
+Clicking the &#127760; before any verse will 'be-browser
+a link to every.</p>
+<p>You might copy, paste, bookmark, email or
+otherwise share that link with your family, friends &amp;
+communities.
+</p>
+
+<a href="https://MightyMaxims.com">Website</a><br>
+<a href="https://ko-fi.com/doctorquote">Community</a><br>
 </p>
 </td></tr></table>
 """
@@ -107,8 +144,9 @@ def __write_html(output_html_file, quote, fh):
     rec += "</article>"
     print(rec, file=fh)
 
-def write_user_notes(output_html_file, quotes):
-    subjects = NoteDAO.GetSubjects()
+
+def write_user_notes(output_html_file, quotes, **kwargs):
+    subjects = NoteDAO.GetSubjects(**kwargs)
     dreport = dict()
     for s in subjects:
         dreport[s] = list()
@@ -118,8 +156,14 @@ def write_user_notes(output_html_file, quotes):
                 dreport[None].append(quote)
                 continue
         for subject in quote.subjects:
-            if subject in qdict['Subject']:
-                dreport[subject].append(quote)               
+            dreport[subject].append(quote)
+
+    HEADER = None
+    if 'db' in kwargs:
+        HEADER = HEADER_COMMON
+    else:
+        HEADER = HEADER_BIBLIA
+        
     with open(output_html_file, 'w', encoding="utf8") as fh:
         print(HEADER, file=fh)
         if dreport:
@@ -137,14 +181,14 @@ def write_user_notes(output_html_file, quotes):
         print("</html>", file=fh)
 
 
-def export_notes_to_html(output_html_file = 'MyNotes.html'):
+def export_notes_to_html(output_html_file = 'MyNotes.html', **kwargs):
     ''' Generate lessons based upon SqlNotes. '''
     try:
         # Fix 'Could not decode to UTF-8 column' errors:
         # source_conn.text_factory = lambda b: b.decode('latin-1')
         #
         # Write data from the book's table:
-        write_user_notes(output_html_file, UserSelects.Get())
+        write_user_notes(output_html_file, UserSelects.Get(**kwargs), **kwargs)
         rfile = os.path.sep.join((
             os.getcwd(),
             output_html_file))
@@ -162,4 +206,4 @@ def export_notes_to_html(output_html_file = 'MyNotes.html'):
 
 
 if __name__ == '__main__':
-    export_notes_to_html()
+    export_notes_to_html() # default db ok.

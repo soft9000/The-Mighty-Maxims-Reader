@@ -8,7 +8,7 @@ if '..' not in sys.path:
 from bible9000.tui import BasicTui
 from bible9000.sierra_dao import SierraDAO
 
-class FavDAO():
+class FavDAO:
     ''' Manage the Fav Table '''
     def __init__(self, row=None):
         self.item = 0
@@ -80,20 +80,17 @@ class FavDAO():
 
             
     @staticmethod
-    def GetDAO(bSaints=False, database=None):
+    def GetDAO(**kwargs):
         ''' Connect to the database & return the DAO '''
-        if not database:
-            from bible9000.admin_ops import get_database
-            database = get_database()
         result = FavDAO()
-        result.dao = SierraDAO.GetDAO(bSaints, database)
+        result.dao = SierraDAO.GetDAO(**kwargs)
         return result
 
 
     @staticmethod
-    def IsFav(sierra:int)->bool:
+    def IsFav(sierra:int, **kwargs)->bool:
         ''' JDI :) '''
-        return FavDAO.GetDAO(True).is_fav(sierra)
+        return FavDAO.GetDAO(**kwargs).is_fav(sierra)
 
 
 if __name__ == '__main__':

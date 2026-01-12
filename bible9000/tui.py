@@ -1,4 +1,8 @@
 # License: MIT
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
+
 from bible9000.pannel import Panel
 from bible9000.fast_path import FastPath
 lwrap = Panel()
@@ -61,7 +65,7 @@ class BasicTui:
     def InputOnly(*args)->str:
         ''' Enacpsulating sub-menu 'ops. '''
         while True:
-            option = BasicTui.Input(f'{args} > ')
+            option = BasicTui.Input(f'{", ".join(args)} > ')
             if FastPath.Len() or len(option) > 1:
                 return option
             if option not in args:
@@ -84,18 +88,20 @@ class BasicTui:
             print(line)
         
     @staticmethod
-    def DisplayBooks(bSaints=True):
-        ''' Displays the books. Saint = superset. Returns number
+    def DisplayBooks(**kwargs)->int:
+        ''' Displays the books. Returns number
             of books displayed to permit selections of same.
         '''
+        result = 0
         from bible9000.sierra_dao import SierraDAO
-        for ss, book in enumerate(SierraDAO.ListBooks(bSaints),1):
+        for ss, book in enumerate(SierraDAO.ListBooks(**kwargs),1):
             if(ss % 3) == 0:
                 print(f"{ss:02}.) {book['book']:<18}")
             else:
                 print(f"{ss:02}.) {book['book']:<18}", end = '')
+            result += 1
         print()
-        return ss
+        return result
        
     @staticmethod
     def DisplayError(line:str)->bool:
@@ -105,15 +111,19 @@ class BasicTui:
     @staticmethod
     def Display(*args)->bool:
         ''' Common display for all lines. '''
+        error = False # TODO
         if not args:
             return False
         line = ' '.join(args)
         for zline in lwrap.wrap(line.strip()):
-            print(zline)
+            if error:
+                print(zline, file=sys.stderr)
+            else:
+                print(zline)
         return True
    
     @staticmethod
-    def DisplayVerse(row:dict)->bool:
+    def DisplayVerse(row:dict, **kwargs)->bool:
         ''' Common display for all verses. '''
         # TODO: Convert to UserSelects IFF.
         from bible9000.sierra_note import NoteDAO
@@ -129,10 +139,10 @@ class BasicTui:
         for zline in lwrap.wrap(line.strip()):
             left.append(zline)
         right = []
-        dao = FavDAO.GetDAO(True)
+        dao = FavDAO.GetDAO(**kwargs)
         if dao.is_fav(row['sierra']):
             right.append(*lwrap.wrap('* Starred *'))
-        dao = NoteDAO.GetDAO(True)
+        dao = NoteDAO.GetDAO(**kwargs)
         dbrow = dao.note_for(row['sierra'])
         if not dbrow: return False
         for line in dbrow.Subject:

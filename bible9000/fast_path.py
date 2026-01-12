@@ -48,6 +48,10 @@ class FastPath:
             if len(FastPath._present.cmd):
                 return FastPath._present.cmd.pop()
 
+    @staticmethod
+    def Reset():
+        FastPath._present = None
+
 
 if __name__ == '__main__':
     FastPath.Setup('a.b.c.d')

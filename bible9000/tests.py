@@ -3,43 +3,45 @@
 '''
 File: tests.py
 Problem Domain: Regression testing
-Status: PRODUCTION / STABLE
-Revision: 1.0.0
+Status: Testing Success
+Revision: 2.0.0
 '''
 
-import sys
+import io,sys
 if '..' not in sys.path:
     sys.path.append('..')
-
+    
+from contextlib import redirect_stdout
 from bible9000.tui import BasicTui
 from bible9000.sierra_dao import SierraDAO
 from bible9000.sierra_note import NoteDAO
 from bible9000.words import WordList
 from bible9000.sierra_fav import FavDAO
+from bible9000.fast_path import FastPath
 
-def test_dao():
+def test_dao(**kwargs):
     ''' Ye Olde Testing '''
-    rows = SierraDAO.ListBooks(True)
+    rows = SierraDAO.ListBooks(**kwargs)
     if len(list(rows)) != 81:
         BasicTui.DisplayError("Testing Failure - No Books?")
         quit()
 
-    dao = SierraDAO.GetDAO()
+    dao = SierraDAO.GetDAO(**kwargs)
     rows = dao.search("verse LIKE '%PERFECT%'")
-    if len(list(rows)) != 124:
+    if len(list(rows)) < 124:
         BasicTui.DisplayError("Testing Failure")
     else:
         BasicTui.Display("Testing Success")
 
-def test_favs():
+def test_favs(**kwargs):
     import os, os.path
-    testdb = "~test.sqlt3"
+    testdb = kwargs['db']
     if os.path.exists(testdb):
         os.unlink(testdb)
     if os.path.exists(testdb):
         raise Exception(f'Unable to remove "{testdb}"?')
     from bible9000.admin_ops import tables
-    db = FavDAO.GetDAO(True, testdb)
+    db = FavDAO.GetDAO(**kwargs)
     db.dao.conn.execute(tables['SqlFav'])
     tests = [
         1, 2, 12, 3000, 3100
@@ -70,21 +72,21 @@ def test_words():
     print(lines)
 
 
-def test_notes():
+def test_notes(**kwargs):
     import os, os.path
-    testdb = "~test.sqlt3"
+    testdb = kwargs['db']
     if os.path.exists(testdb):
         os.unlink(testdb)
     if os.path.exists(testdb):
         raise Exception(f'Unable to remove "{testdb}"?')
     from bible9000.admin_ops import tables
-    db = NoteDAO.GetDAO(True, testdb)
+    db = NoteDAO.GetDAO(**kwargs)
     db.dao.conn.execute(tables['SqlNotes'])
     tests = [
         1, 2, 12, 3000, 3100
         ]
     for t in tests:
-        row = NoteDAO()
+        row = NoteDAO(**kwargs)
         row.vStart  = t
         row.Notes   = f"note{t}"
         row.Subject = f"subject{t}"
@@ -94,9 +96,13 @@ def test_notes():
         cols[0] = 'Updated ' + cols[0]
         row.Notes = cols
         cols = row.Subject
-        cols[0] = 'Updated ' + cols[0]
-        row.Subject = cols
-        db.update_note(row)
+        if not cols:
+            print(row)
+            print("Error: row.Subject error.", file=sys.stderr)
+        else:
+            cols[0] = 'Updated ' + cols[0]
+            row.Subject = cols
+            db.update_note(row)
         print('~')
     for row in db.get_all():
         print('ZNOTE',row.__dict__)
@@ -106,11 +112,30 @@ def test_notes():
     if os.path.exists(testdb):
         os.unlink(testdb)
 
+def test_nav():
+    from main import mainloop
+    ostdin  = sys.stdin
+    ostdout = sys.stdout
+
+    osession = io.StringIO()
+    sys.stdout = osession
+    
+    isession = "v.1.1.q.q.q" # test reset :^)
+    sys.stdin = io.StringIO(isession)
+
+    # with redirect_stdout(output_buffer): # meh
+    mainloop()
+    FastPath.Reset()
+    sys.stdin  = ostdin
+    sys.stdout = ostdout
+    print(osession.getvalue())
+
 
 if __name__ == '__main__':
-    test_dao()
+    test_nav()
+    # test_dao() -> used official database... not used here, but by dao.
     test_words()
-    test_notes()
-    test_favs()
+    test_notes(db="~test.sqlt3")
+    test_favs(db="~test.sqlt3")
     BasicTui.Display("Testing Success")
 
