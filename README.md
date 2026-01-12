@@ -3,6 +3,10 @@ The Mighty Maxims Reader (MMR) is a free & open console user interface (TUI/CUI.
 
 Designed to share classic books first, the never ending journey is to share also any and all insights into them.
 
+!["Keep on 'Learnin"](https://github.com/soft9000/The-Mighty-Maxims-Reader/blob/main/graphics/TheMightyMaximsReader.png)
+
+Our mission is to be sharing our planet's very best in classic readable works - to infinity ... and beyond?
+
 # Use Cases
 1. Share classic books.
 2. Keep notes within each.
