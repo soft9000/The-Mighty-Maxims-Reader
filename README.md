@@ -17,6 +17,9 @@ Our mission is to be sharing our planet's very best in classic readable works - 
 ### Why a TUI?
 From our pockets to the clouds ditching GUI's permits maximum - dare I say global - software re-use.
 
+## STATUS
+Please note that we're in the midst of adding a way to import new books. Known as the "librarian" (go 'fig) we're presently hot on the to-do.
+
 ## Features & Function
 This release offers:
 
