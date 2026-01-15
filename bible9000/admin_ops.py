@@ -232,6 +232,9 @@ def do_user_db_reset(**kwargs)->bool:
 
 
 def do_user_admin_help():
+    BasicTui.Display('m: [Book Manager]')
+    BasicTui.Display('Admin your library by importing, exporting, and managing books.')
+    BasicTui.Display('~~~~~')
     BasicTui.Display('o: [Data Export]')
     BasicTui.Display('Export your notes, stars, and subjects to \
 an dated archive file name. A great way to save our work for later \
@@ -255,13 +258,19 @@ favorites, and subjects.')
     BasicTui.Display('q: [Return] to previous session.')
     BasicTui.Display('~~~~~')
 
+def do_library_ops(**kwargs):
+    ''' Import and export books. '''
+    from admin_archive import do_library_ops
+    do_library_ops(**kwargs)
+
 
 def do_admin_ops(**kwargs):
     from bible9000.main import do_func, dum
     ''' What users can do. '''
     options = [
-        ("o", "Data Export", do_export_user_data),
-        ("i", "Data Import", do_import_user_data),
+        ("m", "Manage Library", do_library_ops),
+        ("o", "User Data Export", do_export_user_data),
+        ("i", "User Data Import", do_import_user_data),
         ("r", "Rename Data Export", do_rename_user_export),
         ("!", "Reset Database", do_user_db_reset),
         ("?", "Help", do_user_admin_help),
