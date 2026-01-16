@@ -1,3 +1,7 @@
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
+
 ''' 
 Metaphore is simple:
 
@@ -8,8 +12,8 @@ ArchLibrary *:1 Arch Stack
 
 And everything has a version.
 '''
-from arch_verse import *
-from arch_book import *
+from ArchiveOne.arch_verse import *
+from ArchiveOne.arch_book import *
 
 class ArchShelf(ArchVersion):
     

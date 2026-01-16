@@ -1,3 +1,7 @@
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
+
 ''' 
 Metaphore is simple:
 
@@ -16,7 +20,11 @@ class ArchVersion:
         self.description = desc
         self.code = code
         self.author = list()
-        self.copyright = None
+        self.copyright = ''
+
+    def __str__(self):
+        import json
+        return json.dumps(self.__dict__)
 
 
 class ArchVerse:
@@ -27,6 +35,10 @@ class ArchVerse:
         self.chapter_num = 0
         self.verse_num = 0
         self.text = '' # typically a sentance / fragment, but can be a full verse.
+
+    def __str__(self):
+        import json
+        return json.dumps(self.__dict__)
 
     def get_verse(self):
         return dict(self.__dict__) # here's your copy ;^)

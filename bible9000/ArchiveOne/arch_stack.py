@@ -1,6 +1,9 @@
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
 
-from arch_verse import *
-from arch_shelf import *
+from ArchiveOne.arch_verse import *
+from ArchiveOne.arch_shelf import *
 
 class ArchStack(ArchVersion):
     
