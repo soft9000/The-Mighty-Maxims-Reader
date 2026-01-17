@@ -2,6 +2,16 @@ import sys
 if '..' not in sys.path:
     sys.path.append('..')
 
+''' 
+Metaphore is:
+
+ArchVerse   0..*:1 ArchBook
+ArchBook    1..*:1 ArchShelf
+ArchShelf   1..*:1 ArchStack
+ArchStack   0..*:1 ArchLibrary
+
+And everything has a version.
+'''
 from ArchiveOne.arch_verse import *
 from ArchiveOne.arch_shelf import *
 
